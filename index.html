@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Monthly Report</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #fafafa;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+      color: #555;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      margin-top: 25px;
+      padding: 12px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Faculty Monthly Report Submission</h2>
+  
+  <form id="reportForm">
+    <label for="facultyName">Faculty Name:</label>
+    <input type="text" id="facultyName" placeholder="Dr. / Mr. / Ms." required>
+
+    <label for="department">Department:</label>
+    <select id="department" required>
+      <option value="">Select Department</option>
+      <option value="Pharmaceutics">Pharmaceutics</option>
+      <option value="Pharmacology">Pharmacology</option>
+      <option value="Pharmaceutical Chemistry">Pharmaceutical Chemistry</option>
+      <option value="Pharmacognosy">Pharmacognosy</option>
+      <option value="Pharmacy Practice">Pharmacy Practice</option>
+    </select>
+
+    <label for="month">Reporting Month:</label>
+    <input type="month" id="month" required>
+
+    <label for="reportDetails">Monthly Work Report Summary:</label>
+    <textarea id="reportDetails" rows="4" placeholder="Brief summary of academic work, labs, research..." required></textarea>
+
+    <label for="fileInput">Upload Document/PDF (Optional):</label>
+    <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.jpg,.png">
+
+    <button type="submit" id="submitBtn">Submit Report</button>
+  </form>
+
+  <div id="status"></div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxuvh0VyR2mcHJrDMkCOw0BJrDMw6-vSxXFQlFJAzzHLDSfyd15R4B863iOk0Sj9Rdj/exec';
+
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const statusDiv = document.getElementById('status');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      statusDiv.style.color = 'black';
+      statusDiv.innerText = 'Submitting report... Please wait.';
+      submitBtn.disabled = true;
+
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      const formData = {
+        facultyName: document.getElementById('facultyName').value,
+        department: document.getElementById('department').value,
+        month: document.getElementById('month').value,
+        reportDetails: document.getElementById('reportDetails').value,
+        fileData: null,
+        fileName: null,
+        fileType: null
+      };
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const base64Data = event.target.result.split(',')[1];
+          formData.fileData = base64Data;
+          formData.fileName = file.name;
+          formData.fileType = file.type;
+          sendData(formData);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        sendData(formData);
+      }
+
+      function sendData(payload) {
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.result === 'success') {
+            statusDiv.style.color = 'green';
+            statusDiv.innerText = 'Report submitted successfully!';
+            document.getElementById('reportForm').reset();
+          } else {
+            statusDiv.style.color = 'red';
+            statusDiv.innerText = 'Error: ' + data.error;
+          }
+          submitBtn.disabled = false;
+        })
+        .catch(error => {
+          statusDiv.style.color = 'red';
+          statusDiv.innerText = 'Submission failed. Please try again.';
+          submitBtn.disabled = false;
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>
